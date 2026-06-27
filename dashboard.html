@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="color-scheme" content="dark"/>
+  <meta name="description" content="SOSdocs HealthData — Dashboard de Observabilidade e Analytics Operacional."/>
+  <title>SOSdocs | HealthData Platform</title>
+  <script>
+    (function(){const s=localStorage.getItem('sos-theme')||'dark';
+    document.querySelector('meta[name="color-scheme"]').content=s;
+    document.documentElement.setAttribute('data-theme',s);})();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+/* ===== TOKENS ===== */
+:root{
+  --brand-deep:   #000a69;
+  --brand-blue:   #0065ff;
+  --brand-dark1:  #000126;
+  --brand-dark2:  #02041e;
+  --brand-light:  #9ac2ff;
+  --brand-gold:   #dea511;
+  --brand-white:  #f7f7f7;
+  --ok:    #00b86b;
+  --er:    #e63946;
+  --warn:  var(--brand-gold);
+  --bg:    var(--brand-dark2);
+  --bgS:   var(--brand-dark1);
+  --bgC:   color-mix(in oklab,var(--brand-deep) 90%,white 10%);
+  --bgCh:  color-mix(in oklab,var(--brand-deep) 70%,var(--brand-blue) 30%);
+  --bgSB:  var(--brand-dark1);
+  --bgTB:  rgba(0,1,38,.88);
+  --bgIn:  rgba(0,10,105,.4);
+  --tx:    var(--brand-white);
+  --txm:   rgba(154,194,255,.55);
+  --txs:   var(--brand-light);
+  --bd:    rgba(154,194,255,.12);
+  --bda:   rgba(0,101,255,.5);
+  --ac:    var(--brand-blue);
+  --acg:   rgba(0,101,255,.25);
+  --shC:   0 4px 24px rgba(0,0,0,.4),0 1px 4px rgba(0,0,0,.3);
+  --shG:   0 0 32px rgba(0,101,255,.2);
+  --r1: 8px; --r2: 12px; --r3: 16px; --r4: 24px; --rf: 9999px;
+  --sw: 260px; --th: 64px;
+  --tr: .22s cubic-bezier(.4,0,.2,1);
+  scrollbar-color:var(--bda) transparent; scrollbar-width:thin; color-scheme:dark;
+}
+[data-theme="light"]{
+  --bg:    var(--brand-white);
+  --bgS:   #eef2fb; --bgC: #fff; --bgCh: #f0f5ff;
+  --bgSB:  #fff; --bgTB: rgba(255,255,255,.92); --bgIn: rgba(0,101,255,.06);
+  --tx:    var(--brand-dark1); --txs: #2d4a8a; --txm: #6b82b0;
+  --bd:    rgba(0,10,105,.1); --bda: rgba(0,101,255,.3);
+  --shC:   0 2px 16px rgba(0,10,105,.08); --shG: 0 0 24px rgba(0,101,255,.12);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+img,svg{display:block} button{cursor:pointer;border:none;background:none;font:inherit}
+ul,ol{list-style:none} a{text-decoration:none;color:inherit} input,textarea,select{font:inherit}
+html{font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.5;color:var(--tx);background:var(--bg);transition:background var(--tr),color var(--tr);accent-color:var(--ac)}
+body{min-height:100dvh;overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--bda);border-radius:var(--rf)}
+h1{font-size:clamp(1.4rem,2vw,1.75rem);font-weight:700} h2{font-size:1.2rem;font-weight:600} h3{font-size:1rem;font-weight:600}
+::selection{background:var(--ac);color:#fff}
+/* LAYOUT */
+.app-shell{display:grid;grid-template-columns:var(--sw) 1fr;grid-template-rows:var(--th) 1fr;min-height:100dvh;transition:grid-template-columns var(--tr)}
+.app-shell.sc{--sw:72px}
+/* SIDEBAR */
+.sb{grid-row:1/-1;grid-column:1;background:var(--bgSB);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:sticky;top:0;height:100dvh;overflow:hidden;z-index:100;transition:background var(--tr)}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:0 18px;height:var(--th);border-bottom:1px solid var(--bd);white-space:nowrap;overflow:hidden;flex-shrink:0}
+.logo-box{width:36px;height:36px;border-radius:var(--r1);background:linear-gradient(135deg,var(--brand-blue),var(--brand-deep));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px var(--acg)}
+.logo-txt{font-weight:800;font-size:1rem;color:var(--tx);letter-spacing:-.02em}
+.logo-sub{font-size:.65rem;color:var(--txm);font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.sb-nav{flex:1;padding:10px 0;overflow-y:auto}
+.nl{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--txm);padding:14px 20px 5px;white-space:nowrap;overflow:hidden;transition:opacity var(--tr)}
+.sc .nl{opacity:0}
+.ni{display:flex;align-items:center;gap:12px;padding:10px 18px;margin:2px 10px;border-radius:var(--r1);color:var(--txm);font-weight:500;font-size:.88rem;cursor:pointer;transition:background var(--tr),color var(--tr),transform .15s ease;white-space:nowrap;overflow:hidden;position:relative}
+.ni:hover{background:var(--bgCh);color:var(--tx);transform:translateX(2px)}
+.ni.active{background:linear-gradient(90deg,var(--acg),transparent);color:var(--brand-blue);font-weight:600}
+.ni.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;background:var(--ac);border-radius:0 var(--rf) var(--rf) 0}
+.ni-icon{flex-shrink:0;width:17px;height:17px}
+.ni-lbl{transition:opacity var(--tr)}
+.sc .ni-lbl{opacity:0;width:0}
+.nbadge{margin-left:auto;padding:1px 7px;border-radius:var(--rf);font-size:.7rem;font-weight:700;flex-shrink:0}
+.nbadge.error{background:rgba(230,57,70,.2);color:var(--er)}
+.nbadge.info{background:var(--acg);color:var(--brand-blue)}
+.sc .nbadge{display:none}
+.sb-bot{padding:10px;border-top:1px solid var(--bd);flex-shrink:0}
+/* TOPBAR */
+.tb{grid-column:2;grid-row:1;height:var(--th);background:var(--bgTB);backdrop-filter:blur(16px) saturate(1.8);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;padding:0 22px;position:sticky;top:0;z-index:90}
+.tb-tog{width:34px;height:34px;border-radius:var(--r1);display:flex;align-items:center;justify-content:center;color:var(--txm);transition:background var(--tr),color var(--tr);flex-shrink:0}
+.tb-tog:hover{background:var(--bgC);color:var(--tx)}
+.tb-title{font-weight:700;font-size:1.05rem;color:var(--tx);flex:1}
+.searchbar{display:flex;align-items:center;gap:8px;background:var(--bgIn);border:1px solid var(--bd);border-radius:var(--r2);padding:7px 14px;width:250px;transition:border-color var(--tr),box-shadow var(--tr)}
+.searchbar:focus-within{border-color:var(--bda);box-shadow:0 0 0 3px var(--acg)}
+.searchbar input{background:none;border:none;outline:none;color:var(--tx);font-size:.85rem;width:100%;caret-color:var(--ac)}
+.searchbar input::placeholder{color:var(--txm)}
+.tb-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.iBtn{width:34px;height:34px;border-radius:var(--r1);display:flex;align-items:center;justify-content:center;color:var(--txm);position:relative;transition:background var(--tr),color var(--tr)}
+.iBtn:hover{background:var(--bgC);color:var(--tx)}
+.iBtn .dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--er);border:2px solid var(--bg)}
+.togbtn{width:56px;height:28px;border-radius:var(--rf);background:var(--bgIn);border:1px solid var(--bd);padding:3px;display:flex;align-items:center;transition:background var(--tr);cursor:pointer}
+.togknob{width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,var(--brand-blue),var(--brand-light));box-shadow:0 2px 8px var(--acg);transition:transform var(--tr);display:flex;align-items:center;justify-content:center}
+[data-theme="light"] .togknob{transform:translateX(28px)}
+.ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand-deep),var(--brand-blue));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;color:#fff;border:2px solid var(--bda);cursor:pointer;box-shadow:0 2px 8px var(--acg)}
+/* MAIN */
+.mc{grid-column:2;grid-row:2;padding:26px;overflow-y:auto;background:var(--bg)}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:26px;gap:14px;flex-wrap:wrap}
+.ph-sub{color:var(--txm);font-size:.85rem;margin-top:3px}
+/* CARDS */
+.card{background:var(--bgC);border:1px solid var(--bd);border-radius:var(--r3);padding:20px 22px;box-shadow:var(--shC);transition:background var(--tr),border-color var(--tr),transform .2s ease,box-shadow .2s ease}
+.card:hover{transform:translateY(-1px);box-shadow:var(--shC),var(--shG)}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:26px}
+.kpi-card{background:var(--bgC);border:1px solid var(--bd);border-radius:var(--r3);padding:18px 20px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shC);transition:transform .2s ease,box-shadow .2s ease,border-color var(--tr);cursor:grab;position:relative;overflow:hidden;user-select:none}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kc,var(--ac));border-radius:var(--r3) var(--r3) 0 0}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:var(--shC),0 8px 32px var(--acg);border-color:var(--bda)}
+.kpi-card.dragging{opacity:.5;transform:scale(.97);cursor:grabbing}
+.kpi-card .drag-hint{position:absolute;top:6px;right:8px;font-size:.65rem;color:var(--txm);opacity:0;transition:opacity .2s}
+.kpi-card:hover .drag-hint{opacity:1}
+.kpi-top{display:flex;align-items:center;justify-content:space-between}
+.kpi-label{font-size:.76rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--txm)}
+.kpi-icon{width:34px;height:34px;border-radius:var(--r1);display:flex;align-items:center;justify-content:center;background:color-mix(in oklab,var(--kc,var(--ac)) 15%,transparent);color:var(--kc,var(--ac))}
+.kpi-value{font-size:clamp(1.5rem,3vw,2.1rem);font-weight:800;letter-spacing:-.02em;color:var(--tx);line-height:1;font-variant-numeric:tabular-nums}
+.kpi-footer{font-size:.74rem;color:var(--txm)}
+.pb{height:6px;border-radius:var(--rf);background:var(--bd);overflow:hidden}
+.pf{height:100%;border-radius:var(--rf);transition:width 1s cubic-bezier(.4,0,.2,1)}
+/* CHART AREA (droppable) */
+.chart-zone{border-radius:var(--r3);border:2px dashed var(--bd);padding:16px;transition:border-color .2s,background .2s;position:relative}
+.chart-zone.drag-over{border-color:var(--brand-blue);background:rgba(0,101,255,.06)}
+.chart-zone-hint{text-align:center;padding:30px 20px;color:var(--txm);font-size:.85rem}
+.chart-zone-hint .hint-icon{font-size:2rem;margin-bottom:8px}
+/* CHARTS GRID */
+.cg{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:26px}
+@media(max-width:1100px){.cg{grid-template-columns:1fr}}
+/* TABLE */
+.tw{overflow-x:auto}
+.dt{width:100%;border-collapse:collapse;font-size:.85rem}
+.dt th{padding:9px 12px;font-size:.71rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--txm);text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+.dt td{padding:11px 12px;border-bottom:1px solid var(--bd);color:var(--tx);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tbody tr{transition:background var(--tr);cursor:pointer}
+.dt tbody tr:hover{background:var(--bgCh)}
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:var(--rf);font-size:.71rem;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+.chip::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.chip.success{background:rgba(0,184,107,.15);color:var(--ok)}
+.chip.error{background:rgba(230,57,70,.15);color:var(--er)}
+.chip.warning{background:rgba(222,165,17,.15);color:var(--brand-gold)}
+.chip.info{background:rgba(0,101,255,.15);color:var(--brand-blue)}
+.chip.running{background:rgba(154,194,255,.15);color:var(--brand-light)}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--r1);font-weight:600;font-size:.84rem;transition:all var(--tr);white-space:nowrap}
+.btn-pri{background:linear-gradient(135deg,var(--brand-blue),color-mix(in oklab,var(--brand-blue) 70%,var(--brand-light)));color:#fff;box-shadow:0 4px 16px var(--acg)}
+.btn-pri:hover{box-shadow:0 6px 24px rgba(0,101,255,.45);transform:translateY(-1px)}
+.btn-gho{background:var(--bgIn);color:var(--txs);border:1px solid var(--bd)}
+.btn-gho:hover{background:var(--bgCh);border-color:var(--bda);color:var(--tx)}
+.btn-sm{padding:5px 12px;font-size:.78rem}
+/* FORM */
+.fi{background:var(--bgIn);border:1px solid var(--bd);border-radius:var(--r1);padding:7px 12px;color:var(--tx);font-size:.85rem;outline:none;transition:border-color var(--tr),box-shadow var(--tr)}
+.fi:focus{border-color:var(--bda);box-shadow:0 0 0 3px var(--acg)}
+.fsel{appearance:none;background:var(--bgIn) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ac2ff' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;border:1px solid var(--bd);border-radius:var(--r1);padding:7px 30px 7px 12px;color:var(--tx);font-size:.85rem;outline:none;cursor:pointer;transition:border-color var(--tr)}
+.fsel:focus{border-color:var(--bda)}
+/* FILTER BAR */
+.fb{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+/* PAGINATION */
+.pag{display:flex;align-items:center;gap:5px;justify-content:flex-end;padding-top:14px}
+.pbn{min-width:30px;height:30px;padding:0 7px;border-radius:var(--r1);display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:600;background:var(--bgIn);color:var(--txm);border:1px solid var(--bd);transition:all var(--tr)}
+.pbn:hover:not(:disabled){background:var(--bgCh);color:var(--tx);border-color:var(--bda)}
+.pbn.active{background:var(--ac);color:#fff;border-color:var(--ac);box-shadow:0 2px 8px var(--acg)}
+.pbn:disabled{opacity:.35;cursor:not-allowed}
+.pi{font-size:.8rem;color:var(--txm);margin-right:auto}
+/* STATS ROW */
+.sr{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:18px}
+.si{display:flex;align-items:center;gap:7px;font-size:.83rem}
+.sd{width:9px;height:9px;border-radius:50%}
+.sv{font-weight:700;color:var(--tx)}
+.sl{color:var(--txm)}
+/* EXEC ITEM */
+.ei{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid var(--bd)}
+.ei:last-child{border-bottom:none}
+.edot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.edot.success{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+.edot.error{background:var(--er);box-shadow:0 0 6px var(--er)}
+.edot.warning{background:var(--brand-gold);box-shadow:0 0 6px var(--brand-gold)}
+.edot.running{background:var(--brand-light);animation:pdot 1s infinite}
+.et{font-weight:600;font-size:.87rem;margin-bottom:2px}
+.em{font-size:.78rem;color:var(--txm)}
+.edur{font-size:.78rem;color:var(--txm);text-align:right;font-variant-numeric:tabular-nums}
+/* AI */
+.ai-fab{position:fixed;bottom:26px;right:26px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--brand-blue),var(--brand-deep));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(0,101,255,.45);z-index:200;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow var(--tr)}
+.ai-fab:hover{transform:scale(1.1)}
+.ai-fab.open{transform:scale(.9) rotate(180deg)}
+.ai-pan{position:fixed;bottom:92px;right:26px;width:380px;max-height:540px;background:var(--bgC);border:1px solid var(--bda);border-radius:var(--r4);box-shadow:0 24px 64px rgba(0,0,0,.5),var(--shG);display:flex;flex-direction:column;z-index:200;overflow:hidden;transition:opacity .25s ease,transform .3s cubic-bezier(.34,1.56,.64,1)}
+.ai-pan.hid{opacity:0;transform:translateY(20px) scale(.95);pointer-events:none}
+.ai-hdr{padding:14px 16px;background:linear-gradient(135deg,rgba(0,101,255,.15),rgba(0,10,105,.2));border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.ai-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand-blue),var(--brand-deep));display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 2px 8px var(--acg)}
+.ai-tit{font-weight:700;font-size:.9rem}
+.ai-sub{font-size:.7rem;color:var(--ok);font-weight:600}
+.ai-ind{width:7px;height:7px;border-radius:50%;background:var(--ok);margin-left:auto;animation:pdot 2s infinite}
+@keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(0,184,107,.5)}50%{box-shadow:0 0 0 5px rgba(0,184,107,0)}}
+.ai-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.ai-msg{display:flex;gap:7px;animation:msgin .3s ease}
+@keyframes msgin{from{opacity:0;transform:translateY(8px)}}
+.ai-msg.user{flex-direction:row-reverse}
+.ai-bub{max-width:82%;padding:9px 13px;border-radius:var(--r2);font-size:.84rem;line-height:1.55}
+.ai-msg.ai .ai-bub{background:var(--bgIn);border:1px solid var(--bd);color:var(--tx);border-radius:4px var(--r2) var(--r2) var(--r2)}
+.ai-msg.user .ai-bub{background:linear-gradient(135deg,var(--brand-blue),color-mix(in oklab,var(--brand-blue) 70%,var(--brand-deep)));color:#fff;border-radius:var(--r2) 4px var(--r2) var(--r2)}
+.ai-typ{display:flex;gap:4px;padding:9px 13px}
+.ai-typ span{width:5px;height:5px;border-radius:50%;background:var(--txm);animation:bdot 1.4s infinite}
+.ai-typ span:nth-child(2){animation-delay:.2s}
+.ai-typ span:nth-child(3){animation-delay:.4s}
+@keyframes bdot{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.ai-chips{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 8px}
+.ai-chp{padding:3px 9px;border-radius:var(--rf);font-size:.72rem;font-weight:600;background:var(--bgIn);border:1px solid var(--bd);color:var(--txs);cursor:pointer;transition:all var(--tr)}
+.ai-chp:hover{background:var(--acg);border-color:var(--bda);color:var(--brand-light)}
+.ai-inp-row{padding:10px 14px;border-top:1px solid var(--bd);display:flex;gap:8px;align-items:center}
+.ai-inp{flex:1;background:var(--bgIn);border:1px solid var(--bd);border-radius:var(--rf);padding:7px 14px;font-size:.84rem;color:var(--tx);outline:none;transition:border-color var(--tr)}
+.ai-inp:focus{border-color:var(--bda)}
+.ai-send{width:32px;height:32px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px var(--acg);transition:transform .15s ease}
+.ai-send:hover{transform:scale(1.1)}
+/* MODALS */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:9999;display:flex;justify-content:center;align-items:center;padding:16px}
+.mbox{background:var(--bgC);border:1px solid var(--bda);border-radius:var(--r3);width:100%;max-width:900px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.6);padding:24px}
+.mhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--bd)}
+.mhdr h3{font-family:'JetBrains Mono',monospace;font-size:1.15rem;color:var(--brand-light)}
+.mbody{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:680px){.mbody{grid-template-columns:1fr}}
+.msec{background:color-mix(in oklab,var(--bgIn) 60%,transparent);border:1px solid var(--bd);border-radius:var(--r2);padding:16px}
+.msec h4{margin-top:0;font-size:.88rem;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:14px}
+.mfgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mf{display:flex;flex-direction:column;gap:2px}
+.mf small{font-size:.68rem;color:var(--txm);text-transform:uppercase;letter-spacing:.05em}
+.mf div{font-size:.88rem;color:var(--tx);font-weight:500}
+.photo-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r1);background:var(--acg);border:1px solid var(--bda);color:var(--brand-light);font-size:.82rem;font-weight:600;cursor:pointer;transition:all var(--tr);margin-top:6px;text-decoration:none}
+.photo-btn:hover{background:var(--brand-blue);color:#fff;border-color:var(--brand-blue)}
+/* ANALYTICS FILTERS */
+.anl-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.tog-btn{padding:5px 14px;border-radius:var(--rf);font-size:.8rem;font-weight:600;border:1px solid var(--bd);background:var(--bgIn);color:var(--txm);cursor:pointer;transition:all var(--tr)}
+.tog-btn.on{border-color:var(--bda);background:var(--acg);color:var(--brand-light)}
+/* LOADING */
+.tldr{position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--brand-blue),var(--brand-gold),var(--brand-blue));background-size:200% 100%;z-index:9999;animation:lsl 1.2s infinite}
+@keyframes lsl{from{background-position:200% 0}to{background-position:-200% 0}}
+/* BG PATTERN */
+.bgp{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(154,194,255,.04) 1.5px,transparent 2.5px) 0 0/28px 28px}
+[data-theme="light"] .bgp{background:radial-gradient(circle,rgba(0,10,105,.04) 1.5px,transparent 2.5px) 0 0/28px 28px}
+/* SECTION ANIM */
+.sea{animation:fsi .3s cubic-bezier(.4,0,.2,1)}
+@keyframes fsi{from{opacity:0;transform:translateY(14px)}}
+/* VIEW TRANSITIONS */
+@keyframes sfr{from{transform:translateX(40px);opacity:0}}
+@keyframes stl{to{transform:translateX(-40px);opacity:0}}
+@keyframes sfl{from{transform:translateX(-40px);opacity:0}}
+@keyframes str{to{transform:translateX(40px);opacity:0}}
+::view-transition-group(root){animation-duration:.3s;animation-timing-function:cubic-bezier(.4,0,.2,1)}
+html:active-view-transition-type(forward)::view-transition-old(root){animation-name:stl}
+html:active-view-transition-type(forward)::view-transition-new(root){animation-name:sfr}
+html:active-view-transition-type(backward)::view-transition-old(root){animation-name:str}
+html:active-view-transition-type(backward)::view-transition-new(root){animation-name:sfl}
+@media(prefers-reduced-motion:reduce){::view-transition-group(root){animation:none!important}}
+/* SMOKE TESTS */
+.smoke-grid{display:grid;gap:12px}
+.smoke-card{background:var(--bgIn);border:1px solid var(--bd);border-radius:var(--r2);padding:14px 16px;transition:border-color var(--tr),box-shadow var(--tr)}
+.smoke-card:hover{border-color:var(--bda);box-shadow:var(--shG)}
+.smoke-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.smoke-id{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600;color:var(--brand-light)}
+.smoke-body{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:.82rem}
+.smoke-f{display:flex;flex-direction:column;gap:2px}
+.smoke-f small{font-size:.66rem;color:var(--txm);text-transform:uppercase;letter-spacing:.05em}
+.smoke-obs{margin-top:10px;font-size:.8rem;color:var(--txm);padding-top:8px;border-top:1px solid var(--bd)}
+.smoke-res{font-size:.78rem;color:var(--txm);margin-top:8px;font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,.2);padding:8px;border-radius:6px;max-height:80px;overflow-y:auto;white-space:pre-wrap}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:900px){.r2col{grid-template-columns:1fr!important}.mbody{grid-template-columns:1fr!important}}
+@media(max-width:768px){.app-shell{grid-template-columns:0 1fr}.sb{position:fixed;left:-260px;transition:left var(--tr)}.tb{grid-column:1/-1}.mc{grid-column:1/-1;padding:16px}.searchbar{display:none}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const { createApp, ref, computed, onMounted, watch, nextTick } = Vue;
+
+function fmtDur(ms){if(!ms)return'—';const s=Math.round(+ms/1000);if(s<60)return`${s}s`;return`${Math.floor(s/60)}m ${s%60}s`}
+function fmtDate(dt){if(!dt)return'—';try{return new Date(dt).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}catch{return dt}}
+function fmtDateOnly(dt){if(!dt)return'—';try{return new Date(dt).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'})}catch{return dt}}
+function sc(s){if(!s)return'info';const u=s.toUpperCase();if(u.includes('SUCESSO')&&!u.includes('ERRO'))return'success';if(u.includes('ERRO'))return'error';if(u.includes('ABERTO')||u.includes('WARN'))return'warning';if(u==='RESOLVIDO')return'success';if(u==='IGNORADO')return'info';if(u.includes('EXECUCAO')||u.includes('EXECUÇÃO'))return'running';return'info'}
+function ed(s){if(!s)return'running';const u=s.toUpperCase();if(u.includes('SUCESSO')&&!u.includes('ERRO'))return'success';if(u.includes('ERRO'))return'error';if(u.includes('EXECUCAO')||u.includes('EXECUÇÃO'))return'running';return'warning'}
+function pag(arr,p,n){return arr.slice((p-1)*n,p*n)}
+function pnums(cur,tot){if(tot<=7)return Array.from({length:tot},(_,i)=>i+1);const p=[];if(cur<=4){for(let i=1;i<=5;i++)p.push(i);p.push('...');p.push(tot)}else if(cur>=tot-3){p.push(1);p.push('...');for(let i=tot-4;i<=tot;i++)p.push(i)}else{p.push(1);p.push('...');for(let i=cur-1;i<=cur+1;i++)p.push(i);p.push('...');p.push(tot)}return p}
+
+function chartBase(dk){return{chart:{background:'transparent',fontFamily:'Inter,sans-serif',toolbar:{show:false},animations:{enabled:true,easing:'easeinout',speed:700}},theme:{mode:dk?'dark':'light'},colors:['#0065ff','#00b86b','#dea511','#9ac2ff','#e63946'],tooltip:{theme:dk?'dark':'light',style:{fontFamily:'Inter,sans-serif',fontSize:'12px'}},grid:{borderColor:dk?'rgba(154,194,255,.1)':'rgba(0,10,105,.08)',strokeDashArray:4,xaxis:{lines:{show:false}}},xaxis:{labels:{style:{colors:dk?'#9ac2ff':'#6b82b0',fontSize:'11px'}},axisBorder:{show:false},axisTicks:{show:false}},yaxis:{labels:{style:{colors:dk?'#9ac2ff':'#6b82b0',fontSize:'11px'}}},legend:{labels:{colors:dk?'#9ac2ff':'#2d4a8a'}}}}
+
+const App = {
+template: `
+  <div class="bgp"></div>
+  <div class="tldr" v-if="loading"></div>
+
+  <div class="app-shell" :class="{sc:sbCol}">
+
+    <!-- SIDEBAR -->
+    <aside class="sb">
+      <div class="sb-logo">
+        <div class="logo-box">
+          <!-- SOS Logo SVG baseada no Manual de Marca (#0065ff, #000a69) -->
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="#ffffff" stroke-width="1.5" fill="none"/>
+            <path d="M8 10.5C8 9.12 9.12 8 10.5 8C11.88 8 13 9.12 13 10.5C13 11.88 11.88 13 10.5 13H8.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M11 13.5C11 14.88 12.12 16 13.5 16C14.88 16 16 14.88 16 13.5C16 12.12 14.88 11 13.5 11H11.5" stroke="#9ac2ff" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div v-show="!sbCol">
+          <div class="logo-txt">SOSdocs</div>
+          <div class="logo-sub">HealthData Platform</div>
+        </div>
+      </div>
+      <nav class="sb-nav">
+        <div class="nl">Visão Geral</div>
+        <div v-for="it in navItems.slice(0,3)" :key="it.id" class="ni" :class="{active:pg===it.id}" @click="nav(it.id)" :title="it.label">
+          <i :data-lucide="it.icon" class="ni-icon"></i>
+          <span class="ni-lbl">{{it.label}}</span>
+          <span v-if="it.badge" class="nbadge" :class="it.btype">{{it.badge}}</span>
+        </div>
+        <div class="nl">Operações</div>
+        <div v-for="it in navItems.slice(3,7)" :key="it.id" class="ni" :class="{active:pg===it.id}" @click="nav(it.id)" :title="it.label">
+          <i :data-lucide="it.icon" class="ni-icon"></i>
+          <span class="ni-lbl">{{it.label}}</span>
+          <span v-if="it.badge" class="nbadge" :class="it.btype">{{it.badge}}</span>
+        </div>
+        <div class="nl">Sistema</div>
+        <div v-for="it in navItems.slice(7)" :key="it.id" class="ni" :class="{active:pg===it.id}" @click="nav(it.id)" :title="it.label">
+          <i :data-lucide="it.icon" class="ni-icon"></i>
+          <span class="ni-lbl">{{it.label}}</span>
+        </div>
+      </nav>
+      <div class="sb-bot">
+        <div class="ni" title="Sair">
+          <i data-lucide="log-out" class="ni-icon"></i>
+          <span class="ni-lbl">Sair</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- TOPBAR -->
+    <header class="tb">
+      <button class="tb-tog" @click="sbCol=!sbCol"><i data-lucide="menu" style="width:17px;height:17px"></i></button>
+      <span class="tb-title">{{pgLabel}}</span>
+      <div class="searchbar">
+        <i data-lucide="search" style="width:14px;height:14px;color:var(--txm);flex-shrink:0"></i>
+        <input placeholder="Buscar CB, DC, execução..." v-model="gs"/>
+      </div>
+      <div class="tb-actions">
+        <button class="iBtn" title="Notificações">
+          <i data-lucide="bell" style="width:16px;height:16px"></i>
+          <span class="dot" v-if="erroCount>0"></span>
+        </button>
+        <button class="iBtn" title="Atualizar" @click="loadAll">
+          <i data-lucide="refresh-cw" style="width:16px;height:16px" :style="loading?'animation:spin 1s linear infinite':''"></i>
+        </button>
+        <button class="togbtn" @click="thm" title="Tema">
+          <div class="togknob"><i :data-lucide="dk?'moon':'sun'" style="width:11px;height:11px;color:white"></i></div>
+        </button>
+        <div class="ava">A</div>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="mc" style="position:relative;z-index:1">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div v-if="pg==='dashboard'" class="sea">
+        <div class="ph">
+          <div>
+            <h1>Dashboard</h1>
+            <div class="ph-sub">Plataforma HealthData · Atualizado {{lastUpd}}</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="chip" :class="modo==='PRODUCAO'?'success':'warning'">{{modo==='PRODUCAO'?'● PRODUÇÃO':'◆ TESTE'}}</span>
+            <button class="btn btn-pri" @click="loadAll"><i data-lucide="refresh-cw" style="width:13px;height:13px"></i> Atualizar</button>
+          </div>
+        </div>
+
+        <!-- KPI CARDS (draggáveis) -->
+        <div class="kpi-grid">
+          <div v-for="k in kpiCards" :key="k.id" class="kpi-card" :style="'--kc:'+k.color" :draggable="true"
+            @dragstart="onDragStart($event, k)"
+            @dragend="dragging=null">
+            <span class="drag-hint">⠿ arraste p/ gráfico</span>
+            <div class="kpi-top">
+              <div class="kpi-label">{{k.label}}</div>
+              <div class="kpi-icon"><i :data-lucide="k.icon" style="width:15px;height:15px"></i></div>
+            </div>
+            <div class="kpi-value">{{k.value}}<span v-if="k.pct" style="font-size:1rem;font-weight:500">%</span></div>
+            <div v-if="k.pct" class="pb"><div class="pf" :style="{width:k.value+'%',background:'linear-gradient(90deg,var(--ok),'+k.color+')'}"></div></div>
+            <div class="kpi-footer">{{k.footer}}</div>
+          </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="cg">
+          <!-- CHART ZONE (droppable) -->
+          <div class="card chart-zone" :class="{'drag-over':dropOver}"
+            @dragover.prevent="dropOver=true"
+            @dragleave="dropOver=false"
+            @drop.prevent="onDrop($event)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3>{{activeChart?activeChart.label:'Processamento por Função'}}</h3>
+              <span v-if="activeChart" style="font-size:.75rem;color:var(--txm)">{{activeChart.footer}}</span>
+              <button v-if="activeChart" class="btn btn-gho btn-sm" @click="activeChart=null;renderDash()">Limpar</button>
+            </div>
+            <div v-if="!activeChart && !itensData.length" class="chart-zone-hint">
+              <div class="hint-icon">📊</div>
+              <div>Arraste um card KPI aqui para visualizar em gráfico</div>
+            </div>
+            <div id="chart-main" style="min-height:220px"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3>Status das Execuções</h3>
+            </div>
+            <div id="chart-donut" style="min-height:220px"></div>
+          </div>
+        </div>
+
+        <!-- ÚLTIMAS EXECUÇÕES + ERROS RECENTES -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="r2col">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <h3>Últimas Execuções</h3>
+              <button class="btn btn-gho btn-sm" @click="nav('execucoes')">Ver todas</button>
+            </div>
+            <div v-for="ex in execucoesData.slice(0,5)" :key="ex.execucao_id" class="ei">
+              <div class="edot" :class="ed(ex.status)"></div>
+              <div>
+                <div class="et">{{ex.funcao_label||ex.funcao}}</div>
+                <div class="em">{{fmtDate(ex.iniciado_em)}} · <span style="font-family:'JetBrains Mono',monospace;font-size:.75rem">{{ex.execucao_id}}</span></div>
+                <div style="margin-top:5px"><span class="chip" :class="sc(ex.status)">{{ex.status}}</span></div>
+              </div>
+              <div class="edur">{{fmtDur(ex.duracao_ms)}}<br/><span>{{ex.total_processado||'—'}} itens</span></div>
+            </div>
+            <div v-if="!execucoesData.length" style="text-align:center;padding:20px;color:var(--txm)">Nenhuma execução registrada.</div>
+          </div>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <h3>Erros Recentes</h3>
+              <button class="btn btn-gho btn-sm" @click="nav('erros')">Ver todos</button>
+            </div>
+            <div class="tw">
+              <table class="dt">
+                <thead><tr><th>Etiqueta</th><th>Código</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr v-for="e in errosData.slice(0,7)" :key="e.erro_id">
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem">{{e.etiqueta}}</td>
+                    <td><span class="chip error">{{e.codigo_erro}}</span></td>
+                    <td><span class="chip" :class="sc(e.status_erro)">{{e.status_erro}}</span></td>
+                  </tr>
+                  <tr v-if="!errosData.length"><td colspan="3" style="text-align:center;padding:20px;color:var(--txm)">✅ Sem erros!</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ANALYTICS ===== -->
+      <div v-if="pg==='analytics'" class="sea">
+        <div class="ph">
+          <div><h1>Analytics</h1><div class="ph-sub">Tendências, rankings e evolução temporal</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px" class="r2col">
+          <div class="card">
+            <h3 style="margin-bottom:14px">Distribuição por Status DocZ</h3>
+            <div id="chart-bar-status" style="min-height:280px"></div>
+          </div>
+          <div class="card">
+            <h3 style="margin-bottom:14px">Erros por Código</h3>
+            <div id="chart-pie-erros" style="min-height:280px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+            <h3>Volume de Processamento — Histórico Completo</h3>
+            <div class="anl-filter">
+              <button class="tog-btn" :class="{on:anlSeries.proc}" @click="anlSeries.proc=!anlSeries.proc;renderAnl()">Processados</button>
+              <button class="tog-btn" :class="{on:anlSeries.suc}" @click="anlSeries.suc=!anlSeries.suc;renderAnl()">Sucesso</button>
+              <button class="tog-btn" :class="{on:anlSeries.err}" @click="anlSeries.err=!anlSeries.err;renderAnl()">Erros</button>
+            </div>
+          </div>
+          <div id="chart-area" style="min-height:320px"></div>
+        </div>
+      </div>
+
+      <!-- ===== CAIXAS & DOCS ===== -->
+      <div v-if="pg==='itens'" class="sea">
+        <div class="ph">
+          <div><h1>Caixas &amp; Documentos</h1><div class="ph-sub">Clique em qualquer linha para ver todos os dados do documento no AppSheet</div></div>
+        </div>
+        <div class="card">
+          <div class="fb">
+            <select class="fsel" v-model="itF.tipo" style="width:140px">
+              <option value="">Todos</option><option>CAIXA</option><option>DOCUMENTO</option>
+            </select>
+            <select class="fsel" v-model="itF.status" style="width:155px">
+              <option value="">Todos os status</option><option>SUCESSO</option><option>ERRO</option>
+            </select>
+            <input class="fi" placeholder="Buscar etiqueta (CB/DC)..." v-model="itF.search" style="width:230px"/>
+            <span class="pi" style="margin-left:auto">{{filtItens.length}} registros</span>
+          </div>
+          <div class="sr">
+            <div class="si"><div class="sd" style="background:var(--brand-blue)"></div><span class="sv">{{itensStats.caixas}}</span><span class="sl">Caixas</span></div>
+            <div class="si"><div class="sd" style="background:var(--brand-light)"></div><span class="sv">{{itensStats.documentos}}</span><span class="sl">Documentos</span></div>
+            <div class="si"><div class="sd" style="background:var(--ok)"></div><span class="sv">{{itensStats.sucesso}}</span><span class="sl">Sucesso</span></div>
+            <div class="si"><div class="sd" style="background:var(--er)"></div><span class="sv">{{itensStats.erro}}</span><span class="sl">Erro</span></div>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr>
+                <th>Timestamp</th><th>Tipo</th><th>Etiqueta</th><th>Status Item</th><th>Status DocZ</th><th>Arquivo</th><th>Hash</th><th>Execução</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="it in pagItens" :key="it.timestamp+it.etiqueta" @click="openDoc(it)" title="Clique para ver dados AppSheet">
+                  <td style="font-size:.76rem;white-space:nowrap;color:var(--txm)">{{fmtDate(it.timestamp)}}</td>
+                  <td><span class="chip" :class="it.tipo_entidade==='CAIXA'?'info':'running'">{{it.tipo_entidade}}</span></td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600">{{it.etiqueta}}</td>
+                  <td><span class="chip" :class="sc(it.status_item)">{{it.status_item}}</span></td>
+                  <td><span class="chip" :class="sc(it.status_docz)">{{it.status_docz||'—'}}</span></td>
+                  <td style="font-size:.76rem;color:var(--txm)">{{it.status_arquivo_docz||'—'}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--txm);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="it.hash_arquivo">{{it.hash_arquivo||'—'}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--txm);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="it.execucao_id">{{it.execucao_id}}</td>
+                </tr>
+                <tr v-if="!pagItens.length"><td colspan="8" style="text-align:center;padding:24px;color:var(--txm)">📦 Nenhum item encontrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pag">
+            <span class="pi">{{filtItens.length}} itens · pág. {{itP}}/{{itTP}}</span>
+            <button class="pbn" :disabled="itP===1" @click="itP--">‹</button>
+            <button v-for="p in pnums(itP,itTP)" :key="p" class="pbn" :class="{active:p===itP}" @click="p!=='...'&&(itP=p)">{{p}}</button>
+            <button class="pbn" :disabled="itP===itTP" @click="itP++">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EXECUÇÕES ===== -->
+      <div v-if="pg==='execucoes'" class="sea">
+        <div class="ph"><div><h1>Execuções</h1><div class="ph-sub">Histórico completo de ondas de processamento · {{execucoesData.length}} registros</div></div></div>
+        <div class="card">
+          <div class="fb">
+            <select class="fsel" v-model="exF.status" style="width:180px">
+              <option value="">Todos os status</option>
+              <option>SUCESSO</option><option>SUCESSO COM ERROS</option><option>ERRO</option><option>EM EXECUCAO</option>
+            </select>
+            <select class="fsel" v-model="exF.funcao" style="width:240px">
+              <option value="">Todas as funções</option>
+              <option v-for="fn in execFuncs" :key="fn">{{fn}}</option>
+            </select>
+            <input class="fi" placeholder="Buscar ID, etiqueta..." v-model="exF.search" style="width:200px"/>
+            <span class="pi" style="margin-left:auto">{{filtExecs.length}} registros</span>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr>
+                <th>ID Execução</th><th>Função</th><th>Status</th><th>Modo</th><th>Iniciado</th><th>Duração</th><th>Processados</th><th>Sucesso</th><th>Erros</th><th>1ª Etiqueta</th><th>Última Etiqueta</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="ex in pagExecs" :key="ex.execucao_id">
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--txm)">{{ex.execucao_id}}</td>
+                  <td style="font-size:.82rem;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="ex.funcao">{{ex.funcao_label||ex.funcao}}</td>
+                  <td><span class="chip" :class="sc(ex.status)">{{ex.status}}</span></td>
+                  <td><span class="chip info" v-if="ex.modo">{{ex.modo}}</span></td>
+                  <td style="font-size:.78rem;white-space:nowrap">{{fmtDate(ex.iniciado_em)}}</td>
+                  <td style="font-variant-numeric:tabular-nums;font-size:.82rem">{{fmtDur(ex.duracao_ms)}}</td>
+                  <td style="font-weight:700">{{ex.total_processado||'—'}}</td>
+                  <td style="color:var(--ok);font-weight:700">{{ex.total_sucesso||'—'}}</td>
+                  <td style="color:var(--er);font-weight:700">{{ex.total_erro||'0'}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--txm)">{{ex.primeira_etiqueta||'—'}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--txm)">{{ex.ultima_etiqueta||'—'}}</td>
+                </tr>
+                <tr v-if="!pagExecs.length"><td colspan="11" style="text-align:center;padding:24px;color:var(--txm)">📋 Nenhuma execução encontrada.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pag">
+            <span class="pi">{{filtExecs.length}} · pág. {{exP}}/{{exTP}}</span>
+            <button class="pbn" :disabled="exP===1" @click="exP--">‹</button>
+            <button v-for="p in pnums(exP,exTP)" :key="p" class="pbn" :class="{active:p===exP}" @click="p!=='...'&&(exP=p)">{{p}}</button>
+            <button class="pbn" :disabled="exP===exTP" @click="exP++">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ERROS ===== -->
+      <div v-if="pg==='erros'" class="sea">
+        <div class="ph"><div><h1>Erros</h1><div class="ph-sub">Registro completo de falhas operacionais · {{errosData.length}} registros</div></div></div>
+        <div class="card">
+          <div class="fb">
+            <select class="fsel" v-model="erF.status" style="width:155px">
+              <option value="">Todos</option><option>ABERTO</option><option>RESOLVIDO</option><option>IGNORADO</option>
+            </select>
+            <select class="fsel" v-model="erF.tipo" style="width:145px">
+              <option value="">Todos tipos</option><option>CAIXA</option><option>DOCUMENTO</option>
+            </select>
+            <select class="fsel" v-model="erF.codigo" style="width:195px">
+              <option value="">Todos os códigos</option>
+              <option v-for="c in errosCodigos" :key="c">{{c}}</option>
+            </select>
+            <input class="fi" placeholder="Buscar etiqueta..." v-model="erF.search" style="width:195px"/>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr>
+                <th>Data</th><th>Tipo</th><th>Etiqueta</th><th>Código Erro</th><th>Status</th><th>Tentativas</th><th>Mensagem Erro</th><th>Execução</th><th>Resolvido em</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="e in pagErros" :key="e.erro_id">
+                  <td style="font-size:.76rem;white-space:nowrap;color:var(--txm)">{{fmtDate(e.criado_em)}}</td>
+                  <td><span class="chip" :class="e.tipo_entidade==='CAIXA'?'info':'running'">{{e.tipo_entidade}}</span></td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600">{{e.etiqueta}}</td>
+                  <td><span class="chip error">{{e.codigo_erro}}</span></td>
+                  <td><span class="chip" :class="sc(e.status_erro)">{{e.status_erro}}</span></td>
+                  <td style="text-align:center;font-weight:700">{{e.tentativas||'—'}}</td>
+                  <td style="font-size:.78rem;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" :title="e.mensagem_erro">{{e.mensagem_erro}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--txm)">{{e.execucao_id}}</td>
+                  <td style="font-size:.76rem;color:var(--txm)">{{fmtDate(e.resolvido_em)}}</td>
+                </tr>
+                <tr v-if="!pagErros.length"><td colspan="9" style="text-align:center;padding:24px;color:var(--txm)">✅ Nenhum erro encontrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pag">
+            <span class="pi">{{filtErros.length}} · pág. {{erP}}/{{erTP}}</span>
+            <button class="pbn" :disabled="erP===1" @click="erP--">‹</button>
+            <button v-for="p in pnums(erP,erTP)" :key="p" class="pbn" :class="{active:p===erP}" @click="p!=='...'&&(erP=p)">{{p}}</button>
+            <button class="pbn" :disabled="erP===erTP" @click="erP++">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LOGS ===== -->
+      <div v-if="pg==='logs'" class="sea">
+        <div class="ph"><div><h1>Logs Operacionais</h1><div class="ph-sub">Todos os eventos gerados pelas execuções · {{logsData.length}} registros</div></div></div>
+        <div class="card">
+          <div class="fb">
+            <select class="fsel" v-model="lgF.nivel" style="width:140px">
+              <option value="">Todos os níveis</option><option>INFO</option><option>WARN</option><option>ERROR</option>
+            </select>
+            <select class="fsel" v-model="lgF.funcao" style="width:220px">
+              <option value="">Todas as funções</option>
+              <option v-for="fn in execFuncs" :key="fn">{{fn}}</option>
+            </select>
+            <input class="fi" placeholder="Buscar mensagem, etiqueta..." v-model="lgF.search" style="width:250px"/>
+            <span class="pi" style="margin-left:auto">{{filtLogs.length}} eventos</span>
+          </div>
+          <div class="tw">
+            <table class="dt">
+              <thead><tr>
+                <th>Timestamp</th><th>Nível</th><th>Função</th><th>Tipo</th><th>Etiqueta</th><th>ID Execução</th><th style="min-width:350px">Resumo (Mensagem + Detalhes)</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="(lg,i) in pagLogs" :key="i">
+                  <td style="font-size:.74rem;white-space:nowrap;color:var(--txm)">{{fmtDate(lg.timestamp)}}</td>
+                  <td><span class="chip" :class="lg.nivel==='ERROR'?'error':lg.nivel==='WARN'?'warning':'info'">{{lg.nivel}}</span></td>
+                  <td style="font-size:.78rem;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="lg.funcao">{{lg.funcao}}</td>
+                  <td><span class="chip" v-if="lg.tipo_entidade" :class="lg.tipo_entidade==='CAIXA'?'info':'running'">{{lg.tipo_entidade}}</span><span v-else style="color:var(--txm)">—</span></td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.76rem">{{lg.etiqueta||'—'}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--txm);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="lg.execucao_id">{{lg.execucao_id||'—'}}</td>
+                  <td style="font-size:.8rem;line-height:1.45">
+                    <span>{{lg.mensagem}}</span>
+                    <span v-if="lg.detalhes_resumidos" style="color:var(--txm);font-size:.76rem"> · {{lg.detalhes_resumidos}}</span>
+                  </td>
+                </tr>
+                <tr v-if="!pagLogs.length"><td colspan="7" style="text-align:center;padding:24px;color:var(--txm)">📄 Nenhum log encontrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pag">
+            <span class="pi">{{filtLogs.length}} · pág. {{lgP}}/{{lgTP}}</span>
+            <button class="pbn" :disabled="lgP===1" @click="lgP--">‹</button>
+            <button v-for="p in pnums(lgP,lgTP)" :key="p" class="pbn" :class="{active:p===lgP}" @click="p!=='...'&&(lgP=p)">{{p}}</button>
+            <button class="pbn" :disabled="lgP===lgTP" @click="lgP++">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SMOKE TESTS ===== -->
+      <div v-if="pg==='smoke'" class="sea">
+        <div class="ph">
+          <div><h1>Smoke Tests</h1><div class="ph-sub">Validações automáticas de saúde do sistema · {{smokeData.length}} testes</div></div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="fb">
+            <select class="fsel" v-model="smF.status" style="width:175px">
+              <option value="">Todos os status</option><option>CONCLUIDO</option><option>FALHA</option><option>PENDENTE</option>
+            </select>
+            <select class="fsel" v-model="smF.tipo" style="width:145px">
+              <option value="">Todos tipos</option><option>CAIXA</option><option>DOCUMENTO</option>
+            </select>
+            <input class="fi" placeholder="Buscar etiqueta, teste ID..." v-model="smF.search" style="width:220px"/>
+            <span class="pi" style="margin-left:auto">{{filtSmoke.length}} testes</span>
+          </div>
+          <!-- Stats summary -->
+          <div class="sr" style="margin-bottom:18px">
+            <div class="si"><div class="sd" style="background:var(--ok)"></div><span class="sv">{{smokeData.filter(s=>s.status_teste==='CONCLUIDO').length}}</span><span class="sl">Concluídos</span></div>
+            <div class="si"><div class="sd" style="background:var(--er)"></div><span class="sv">{{smokeData.filter(s=>s.status_teste==='FALHA').length}}</span><span class="sl">Falhas</span></div>
+            <div class="si"><div class="sd" style="background:var(--warn)"></div><span class="sv">{{smokeData.filter(s=>!s.status_teste||s.status_teste==='PENDENTE').length}}</span><span class="sl">Pendentes</span></div>
+          </div>
+        </div>
+        <!-- Tabela Smoke Tests -->
+        <div class="card">
+          <div class="tw">
+            <table class="dt">
+              <thead><tr>
+                <th>ID Teste</th><th>Criado em</th><th>Tipo</th><th>ID AppSheet</th><th>Etiqueta</th><th>Função Alvo</th><th>Status</th><th>Observação</th><th>Resultado</th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="(s,i) in filtSmoke" :key="i">
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;color:var(--brand-light)">{{s.teste_id}}</td>
+                  <td style="font-size:.76rem;color:var(--txm);white-space:nowrap">{{fmtDate(s.criado_em)}}</td>
+                  <td><span class="chip" :class="s.tipo_entidade==='CAIXA'?'info':'running'">{{s.tipo_entidade||'—'}}</span></td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--txm)">{{s.id_appsheet||'—'}}</td>
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600">{{s.etiqueta||'—'}}</td>
+                  <td style="font-size:.78rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="s.funcao_alvo">{{s.funcao_alvo||'—'}}</td>
+                  <td><span class="chip" :class="s.status_teste==='CONCLUIDO'?'success':s.status_teste==='FALHA'?'error':'warning'">{{s.status_teste||'—'}}</span></td>
+                  <td style="font-size:.78rem;color:var(--txm);max-width:200px">{{s.observacao||'—'}}</td>
+                  <td style="max-width:250px">
+                    <details v-if="s.resultado">
+                      <summary style="cursor:pointer;font-size:.76rem;color:var(--brand-light)">Ver resultado</summary>
+                      <pre style="font-size:.7rem;color:var(--txm);white-space:pre-wrap;word-break:break-all;padding-top:6px;font-family:'JetBrains Mono',monospace">{{formatJSON(s.resultado)}}</pre>
+                    </details>
+                    <span v-else style="color:var(--txm)">—</span>
+                  </td>
+                </tr>
+                <tr v-if="!filtSmoke.length"><td colspan="9" style="text-align:center;padding:24px;color:var(--txm)">🔬 Nenhum smoke test encontrado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CONFIGURAÇÕES ===== -->
+      <div v-if="pg==='config'" class="sea">
+        <div class="ph"><div><h1>Configurações</h1><div class="ph-sub">Parâmetros operacionais (somente leitura)</div></div></div>
+        <div class="card">
+          <div class="tw">
+            <table class="dt">
+              <thead><tr><th>Chave</th><th>Valor</th><th>Descrição</th><th>Atualizado em</th></tr></thead>
+              <tbody>
+                <tr v-for="c in configData" :key="c.chave">
+                  <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:600;color:var(--brand-light)">{{c.chave}}</td>
+                  <td>
+                    <span v-if="c.valor==='True'||c.valor==='true'" class="chip success">{{c.valor}}</span>
+                    <span v-else-if="c.valor==='False'||c.valor==='false'" class="chip error">{{c.valor}}</span>
+                    <span v-else style="font-family:'JetBrains Mono',monospace;font-weight:700">{{c.valor}}</span>
+                  </td>
+                  <td style="font-size:.82rem;color:var(--txm)">{{c.descricao}}</td>
+                  <td style="font-size:.76rem;color:var(--txm);white-space:nowrap">{{fmtDate(c.atualizado_em)}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ===== MODAL DOCUMENTO APPSHEET ===== -->
+  <div v-if="docModal" class="ov" @click.self="docModal=null">
+    <div class="mbox">
+      <div class="mhdr">
+        <h3><i data-lucide="file-text" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px"></i>{{docModal.dados_planilha?.etiqueta||'Documento'}}</h3>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="chip" :class="sc(docModal.dados_planilha?.status_item)">{{docModal.dados_planilha?.status_item}}</span>
+          <button class="btn btn-gho btn-sm" @click="docModal=null"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        </div>
+      </div>
+      <div class="mbody">
+        <!-- AppSheet -->
+        <div class="msec">
+          <h4 style="color:var(--brand-blue)"><i data-lucide="database" style="width:15px;height:15px"></i> Banco de Dados AppSheet</h4>
+          <div v-if="docModal.dados_appsheet?.status_sync==='SINCRONIZADO'" class="mfgrid">
+            <div class="mf" style="grid-column:1/-1">
+              <small>Paciente</small>
+              <div style="font-weight:700;font-size:1rem;color:var(--tx)">{{docModal.dados_appsheet.NomePaciente||'—'}}</div>
+            </div>
+            <div class="mf"><small>Caixa ID</small><div style="font-family:'JetBrains Mono',monospace">{{docModal.dados_appsheet.CaixaID||'—'}}</div></div>
+            <div class="mf"><small>Palete ID</small><div style="font-family:'JetBrains Mono',monospace">{{docModal.dados_appsheet.PaleteID||'—'}}</div></div>
+            <div class="mf"><small>Prontuário</small><div style="font-family:'JetBrains Mono',monospace">{{docModal.dados_appsheet.NumeroProntuario||'—'}}</div></div>
+            <div class="mf"><small>Volume Prontuário</small><div>{{docModal.dados_appsheet.VolumeProntuario||'—'}}</div></div>
+            <div class="mf"><small>CPF</small><div style="font-family:'JetBrains Mono',monospace">{{docModal.dados_appsheet.CPF||'—'}}</div></div>
+            <div class="mf"><small>Sexo</small><div>{{docModal.dados_appsheet.sexo||docModal.dados_appsheet.Sexo||'—'}}</div></div>
+            <div class="mf"><small>Data Nascimento</small><div>{{docModal.dados_appsheet.DataNascimento||'—'}}</div></div>
+            <div class="mf"><small>Último Atendimento</small><div>{{docModal.dados_appsheet.DataUltimoAtendimento||'—'}}</div></div>
+            <div class="mf"><small>Tipo Documental</small><div>{{docModal.dados_appsheet.tipoDocumental||docModal.dados_appsheet.TipoDocumental||'—'}}</div></div>
+            <div class="mf"><small>Status OCR</small><div>{{docModal.dados_appsheet.Status_ocr_documento||'—'}}</div></div>
+            <div class="mf" style="grid-column:1/-1">
+              <small>Foto do Documento</small>
+              <div>
+                <a v-if="docModal.dados_appsheet.LinkFotoDocumento" :href="docModal.dados_appsheet.LinkFotoDocumento" target="_blank" class="photo-btn">
+                  <i data-lucide="image" style="width:14px;height:14px"></i> Abrir Foto
+                </a>
+                <span v-else style="color:var(--txm)">Sem foto cadastrada</span>
+              </div>
+            </div>
+          </div>
+          <div v-else style="color:var(--er);font-size:.88rem;padding:12px;background:rgba(230,57,70,.08);border-radius:8px;border:1px solid rgba(230,57,70,.2)">
+            <strong>⚠ Não sincronizado:</strong> {{docModal.dados_appsheet?.nota||'Registro não encontrado no AppSheet.'}}
+          </div>
+        </div>
+        <!-- Planilha -->
+        <div class="msec">
+          <h4><i data-lucide="file-spreadsheet" style="width:15px;height:15px"></i> Dados DocZ (Planilha)</h4>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="mf"><small>Tipo</small><div><span class="chip" :class="docModal.dados_planilha?.tipo_entidade==='CAIXA'?'info':'running'">{{docModal.dados_planilha?.tipo_entidade}}</span></div></div>
+            <div class="mf"><small>Status Item</small><div><span class="chip" :class="sc(docModal.dados_planilha?.status_item)">{{docModal.dados_planilha?.status_item||'—'}}</span></div></div>
+            <div class="mf"><small>Status DocZ</small><div><span class="chip" :class="sc(docModal.dados_planilha?.status_docz)">{{docModal.dados_planilha?.status_docz||'—'}}</span></div></div>
+            <div class="mf"><small>Status Arquivo</small><div>{{docModal.dados_planilha?.status_arquivo_docz||'—'}}</div></div>
+            <div class="mf"><small>Execução</small><div style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--txm)">{{docModal.dados_planilha?.execucao_id||'—'}}</div></div>
+            <div class="mf"><small>Timestamp</small><div style="color:var(--txm)">{{fmtDate(docModal.dados_planilha?.timestamp)}}</div></div>
+            <div class="mf"><small>Mensagem</small><div style="font-size:.82rem;line-height:1.5;max-height:80px;overflow-y:auto">{{docModal.dados_planilha?.mensagem_resumida||'—'}}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== IA CHAT ===== -->
+  <button class="ai-fab" :class="{open:aiOp}" @click="aiOp=!aiOp" title="Assistente IA">
+    <i :data-lucide="aiOp?'x':'sparkles'" style="width:22px;height:22px"></i>
+  </button>
+  <div class="ai-pan" :class="{hid:!aiOp}">
+    <div class="ai-hdr">
+      <div class="ai-av">✨</div>
+      <div>
+        <div class="ai-tit">Assistente HealthData IA</div>
+        <div class="ai-sub">● Online · AppSheet conectado</div>
+      </div>
+      <div class="ai-ind"></div>
+    </div>
+    <div class="ai-msgs" ref="chatBox">
+      <div v-for="(m,i) in aiMsgs" :key="i" class="ai-msg" :class="m.role">
+        <div class="ai-bub" v-html="m.text"></div>
+      </div>
+      <div v-if="aiTyp" class="ai-msg ai">
+        <div class="ai-bub ai-typ"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div class="ai-chips">
+      <button class="ai-chp" v-for="q in aiSugs" :key="q" @click="sendAI(q)">{{q}}</button>
+    </div>
+    <div class="ai-inp-row">
+      <input class="ai-inp" placeholder="Pergunte sobre DC, caixas, erros..." v-model="aiIn" @keydown.enter="sendAI()"/>
+      <button class="ai-send" @click="sendAI()"><i data-lucide="send" style="width:14px;height:14px"></i></button>
+    </div>
+  </div>
+`,
+
+  setup() {
+    const sbCol = ref(false), loading = ref(false), pg = ref('dashboard'), dk = ref(true);
+    const aiOp = ref(false), aiIn = ref(''), aiTyp = ref(false), gs = ref('');
+    const chatBox = ref(null), lastUpd = ref('—'), modo = ref('PRODUCAO');
+    const docModal = ref(null), dragging = ref(null), dropOver = ref(false), activeChart = ref(null);
+    const anlSeries = ref({ proc: true, suc: true, err: true });
+
+    const execucoesData = ref([]), errosData = ref([]), itensData = ref([]);
+    const logsData = ref([]), configData = ref([]), smokeData = ref([]);
+    const dashData = ref({});
+
+    const aiMsgs = ref([{ role: 'ai', text: 'Olá! Sou o Assistente IA da Plataforma HealthData. Posso buscar dados de DCs no AppSheet, analisar execuções, erros e muito mais. Como posso ajudar?' }]);
+    const aiSugs = ['Taxa de sucesso?', 'Erros abertos', 'Última execução', 'Mostrar DC...'];
+
+    const PS = 25;
+    const exF = ref({ status: '', funcao: '', search: '' }), exP = ref(1);
+    const itF = ref({ tipo: '', status: '', search: '' }), itP = ref(1);
+    const erF = ref({ status: '', tipo: '', codigo: '', search: '' }), erP = ref(1);
+    const lgF = ref({ nivel: '', funcao: '', search: '' }), lgP = ref(1);
+    const smF = ref({ status: '', tipo: '', search: '' });
+
+    const navItems = computed(() => [
+      { id: 'dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
+      { id: 'analytics', label: 'Analytics', icon: 'bar-chart-3' },
+      { id: 'itens', label: 'Caixas & Docs', icon: 'package' },
+      { id: 'execucoes', label: 'Execuções', icon: 'play-circle' },
+      { id: 'erros', label: 'Erros', icon: 'alert-circle', badge: erroCount.value || null, btype: 'error' },
+      { id: 'logs', label: 'Logs', icon: 'file-text' },
+      { id: 'smoke', label: 'Smoke Tests', icon: 'flask-conical' },
+      { id: 'config', label: 'Configurações', icon: 'settings' },
+    ]);
+    const pgLabel = computed(() => ({ dashboard:'Dashboard', analytics:'Analytics', itens:'Caixas & Documentos', execucoes:'Execuções', erros:'Erros', logs:'Logs Operacionais', smoke:'Smoke Tests', config:'Configurações' }[pg.value] || pg.value));
+
+    const erroCount = computed(() => errosData.value.filter(e => e.status_erro === 'ABERTO').length);
+
+    const kpiCards = computed(() => {
+      const d = dashData.value;
+      const totalCB = +d.TOTAL_CAIXAS_REGISTRADAS || itensData.value.filter(i=>i.tipo_entidade==='CAIXA').length;
+      const totalDC = +d.TOTAL_DOCUMENTOS_REGISTRADOS || itensData.value.filter(i=>i.tipo_entidade==='DOCUMENTO').length;
+      const totalExec = +d.TOTAL_EXECUCOES || execucoesData.value.length;
+      const errosAb = erroCount.value;
+      const taxaCB = d.TAXA_SUCESSO_CAIXAS || (totalCB ? ((itensData.value.filter(i=>i.tipo_entidade==='CAIXA'&&i.status_item==='SUCESSO').length/totalCB)*100).toFixed(1) : '—');
+      const taxaDC = d.TAXA_SUCESSO_DOCUMENTOS || (totalDC ? ((itensData.value.filter(i=>i.tipo_entidade==='DOCUMENTO'&&i.status_item==='SUCESSO').length/totalDC)*100).toFixed(1) : '—');
+      return [
+        { id: 'caixas', label: 'Total de Caixas', value: totalCB.toLocaleString ? totalCB.toLocaleString('pt-BR') : totalCB, icon: 'package', color: 'var(--brand-blue)', footer: 'Registradas no DocZ', dataKey: 'caixas' },
+        { id: 'docs', label: 'Total de Documentos', value: totalDC.toLocaleString ? totalDC.toLocaleString('pt-BR') : totalDC, icon: 'file-text', color: 'var(--ok)', footer: 'Registrados no DocZ', dataKey: 'docs' },
+        { id: 'execs', label: 'Execuções', value: totalExec.toLocaleString ? totalExec.toLocaleString('pt-BR') : totalExec, icon: 'play-circle', color: 'var(--brand-gold)', footer: 'Total de ondas', dataKey: 'execs' },
+        { id: 'erros', label: 'Erros Abertos', value: errosAb, icon: 'alert-circle', color: 'var(--er)', footer: 'Aguardando atenção', dataKey: 'erros' },
+        { id: 'taxaCB', label: 'Taxa Sucesso — CB', value: taxaCB, icon: 'trending-up', color: 'var(--brand-blue)', footer: 'Caixas com sucesso', pct: true, dataKey: 'taxaCB' },
+        { id: 'taxaDC', label: 'Taxa Sucesso — DC', value: taxaDC, icon: 'trending-up', color: 'var(--brand-light)', footer: 'Documentos com sucesso', pct: true, dataKey: 'taxaDC' },
+      ];
+    });
+
+    const execFuncs = computed(() => [...new Set(execucoesData.value.map(e => e.funcao).filter(Boolean))]);
+    const errosCodigos = computed(() => [...new Set(errosData.value.map(e => e.codigo_erro).filter(Boolean))]);
+
+    // FILTERS
+    const filtExecs = computed(() => execucoesData.value.filter(e => {
+      if (exF.value.status && e.status !== exF.value.status) return false;
+      if (exF.value.funcao && e.funcao !== exF.value.funcao) return false;
+      if (exF.value.search && !(e.execucao_id+e.primeira_etiqueta+e.ultima_etiqueta).toLowerCase().includes(exF.value.search.toLowerCase())) return false;
+      return true;
+    }));
+    const exTP = computed(() => Math.max(1, Math.ceil(filtExecs.value.length / PS)));
+    const pagExecs = computed(() => pag(filtExecs.value, exP.value, PS));
+
+    const filtItens = computed(() => itensData.value.filter(it => {
+      if (itF.value.tipo && it.tipo_entidade !== itF.value.tipo) return false;
+      if (itF.value.status && it.status_item !== itF.value.status) return false;
+      if (itF.value.search && !(it.etiqueta||'').toLowerCase().includes(itF.value.search.toLowerCase())) return false;
+      return true;
+    }));
+    const itTP = computed(() => Math.max(1, Math.ceil(filtItens.value.length / PS)));
+    const pagItens = computed(() => pag(filtItens.value, itP.value, PS));
+    const itensStats = computed(() => ({
+      caixas: filtItens.value.filter(i=>i.tipo_entidade==='CAIXA').length,
+      documentos: filtItens.value.filter(i=>i.tipo_entidade==='DOCUMENTO').length,
+      sucesso: filtItens.value.filter(i=>i.status_item==='SUCESSO').length,
+      erro: filtItens.value.filter(i=>i.status_item==='ERRO').length,
+    }));
+
+    const filtErros = computed(() => errosData.value.filter(e => {
+      if (erF.value.status && e.status_erro !== erF.value.status) return false;
+      if (erF.value.tipo && e.tipo_entidade !== erF.value.tipo) return false;
+      if (erF.value.codigo && e.codigo_erro !== erF.value.codigo) return false;
+      if (erF.value.search && !(e.etiqueta||'').toLowerCase().includes(erF.value.search.toLowerCase())) return false;
+      return true;
+    }));
+    const erTP = computed(() => Math.max(1, Math.ceil(filtErros.value.length / PS)));
+    const pagErros = computed(() => pag(filtErros.value, erP.value, PS));
+
+    const filtLogs = computed(() => logsData.value.filter(l => {
+      if (lgF.value.nivel && l.nivel !== lgF.value.nivel) return false;
+      if (lgF.value.funcao && l.funcao !== lgF.value.funcao) return false;
+      if (lgF.value.search && !(l.mensagem+l.etiqueta+l.detalhes_resumidos||'').toLowerCase().includes(lgF.value.search.toLowerCase())) return false;
+      return true;
+    }));
+    const lgTP = computed(() => Math.max(1, Math.ceil(filtLogs.value.length / PS)));
+    const pagLogs = computed(() => pag(filtLogs.value, lgP.value, PS));
+
+    const filtSmoke = computed(() => smokeData.value.filter(s => {
+      if (smF.value.status && s.status_teste !== smF.value.status) return false;
+      if (smF.value.tipo && s.tipo_entidade !== smF.value.tipo) return false;
+      if (smF.value.search && !(s.teste_id+s.etiqueta||'').toLowerCase().includes(smF.value.search.toLowerCase())) return false;
+      return true;
+    }));
+
+    // CHARTS
+    let charts = {};
+    function destroyCharts(...ids) { ids.forEach(id => { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }); }
+
+    function renderDash() {
+      destroyCharts('chart-main', 'donut');
+      const base = chartBase(dk.value);
+
+      // Main chart: if activeChart, show its time-series, else show processamento por função
+      const mainEl = document.getElementById('chart-main');
+      if (mainEl) {
+        if (activeChart.value) {
+          // Time series based on itensData timestamps grouped by day
+          const key = activeChart.value.dataKey;
+          const byDay = {};
+          if (key === 'caixas' || key === 'docs') {
+            const tipo = key === 'caixas' ? 'CAIXA' : 'DOCUMENTO';
+            itensData.value.filter(i => i.tipo_entidade === tipo && i.timestamp).forEach(i => {
+              const d = fmtDateOnly(i.timestamp);
+              byDay[d] = (byDay[d] || 0) + 1;
+            });
+          } else if (key === 'execs') {
+            execucoesData.value.filter(e => e.iniciado_em).forEach(e => {
+              const d = fmtDateOnly(e.iniciado_em);
+              byDay[d] = (byDay[d] || 0) + (+e.total_processado || 0);
+            });
+          } else if (key === 'erros') {
+            errosData.value.filter(e => e.criado_em).forEach(e => {
+              const d = fmtDateOnly(e.criado_em);
+              byDay[d] = (byDay[d] || 0) + 1;
+            });
+          } else if (key === 'taxaCB' || key === 'taxaDC') {
+            const tipo = key === 'taxaCB' ? 'CAIXA' : 'DOCUMENTO';
+            const byDayTot = {}, byDayOk = {};
+            itensData.value.filter(i => i.tipo_entidade === tipo && i.timestamp).forEach(i => {
+              const d = fmtDateOnly(i.timestamp);
+              byDayTot[d] = (byDayTot[d] || 0) + 1;
+              if (i.status_item === 'SUCESSO') byDayOk[d] = (byDayOk[d] || 0) + 1;
+            });
+            Object.keys(byDayTot).sort().forEach(d => { byDay[d] = byDayTot[d] > 0 ? +((byDayOk[d]||0)/byDayTot[d]*100).toFixed(1) : 0; });
+          }
+          const cats = Object.keys(byDay).sort();
+          const vals = cats.map(c => byDay[c]);
+          if (cats.length) {
+            charts['chart-main'] = new ApexCharts(mainEl, {
+              ...base,
+              chart: { ...base.chart, type: 'area', height: 220 },
+              series: [{ name: activeChart.value.label, data: vals }],
+              xaxis: { ...base.xaxis, categories: cats },
+              fill: { type: 'gradient', gradient: { opacityFrom: .35, opacityTo: .05 } },
+              stroke: { curve: 'smooth', width: 2.5 },
+              colors: [activeChart.value.color || '#0065ff'],
+              dataLabels: { enabled: false },
+            });
+            charts['chart-main'].render();
+          }
+        } else {
+          // Default: processamento por função
+          const fnCnt = {};
+          execucoesData.value.forEach(e => {
+            const fn = (e.funcao_label || e.funcao || 'Outros').replace('registrar','Reg. ').replace('processar','Proc. ').replace('NoDocZ','').replace('Caixas','CB').replace('Documentos','DC');
+            if (!fnCnt[fn]) fnCnt[fn] = { s: 0, e: 0 };
+            fnCnt[fn].s += (+e.total_sucesso || 0);
+            fnCnt[fn].e += (+e.total_erro || 0);
+          });
+          const labs = Object.keys(fnCnt);
+          if (labs.length) {
+            charts['chart-main'] = new ApexCharts(mainEl, {
+              ...base,
+              chart: { ...base.chart, type: 'bar', height: 220, stacked: true },
+              series: [
+                { name: 'Sucesso', data: labs.map(k => fnCnt[k].s) },
+                { name: 'Erro', data: labs.map(k => fnCnt[k].e) },
+              ],
+              xaxis: { ...base.xaxis, categories: labs },
+              plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+              colors: ['#00b86b', '#e63946'],
+              dataLabels: { enabled: false },
+            });
+            charts['chart-main'].render();
+          }
+        }
+      }
+
+      // Donut: status das execuções
+      const stCnt = {};
+      execucoesData.value.forEach(e => { stCnt[e.status] = (stCnt[e.status] || 0) + 1; });
+      const doEl = document.getElementById('chart-donut');
+      if (doEl && Object.keys(stCnt).length) {
+        charts.donut = new ApexCharts(doEl, {
+          ...base,
+          chart: { ...base.chart, type: 'donut', height: 220 },
+          series: Object.values(stCnt),
+          labels: Object.keys(stCnt),
+          colors: ['#00b86b', '#0065ff', '#dea511', '#e63946'],
+          plotOptions: { pie: { donut: { size: '65%' } } },
+          dataLabels: { enabled: false },
+          legend: { position: 'bottom', ...base.legend },
+        });
+        charts.donut.render();
+      }
+    }
+
+    function renderAnl() {
+      destroyCharts('chart-bar-status', 'chart-pie-erros', 'chart-area');
+      const base = chartBase(dk.value);
+
+      const docz = {};
+      itensData.value.forEach(it => { if (it.status_docz) docz[it.status_docz] = (docz[it.status_docz] || 0) + 1; });
+      const barEl = document.getElementById('chart-bar-status');
+      if (barEl && Object.keys(docz).length) {
+        charts['chart-bar-status'] = new ApexCharts(barEl, {
+          ...base,
+          chart: { ...base.chart, type: 'bar', height: 280 },
+          series: [{ name: 'Itens', data: Object.values(docz) }],
+          xaxis: { ...base.xaxis, categories: Object.keys(docz) },
+          plotOptions: { bar: { borderRadius: 6, columnWidth: '50%' } },
+          dataLabels: { enabled: false },
+          colors: ['#0065ff'],
+        });
+        charts['chart-bar-status'].render();
+      }
+
+      const ec = {};
+      errosData.value.forEach(e => { ec[e.codigo_erro] = (ec[e.codigo_erro] || 0) + 1; });
+      const pieEl = document.getElementById('chart-pie-erros');
+      if (pieEl && Object.keys(ec).length) {
+        charts['chart-pie-erros'] = new ApexCharts(pieEl, {
+          ...base,
+          chart: { ...base.chart, type: 'pie', height: 280 },
+          series: Object.values(ec),
+          labels: Object.keys(ec),
+          colors: ['#e63946', '#dea511', '#9ac2ff', '#0065ff'],
+          dataLabels: { style: { fontFamily: 'Inter,sans-serif', fontSize: '11px' } },
+          legend: { position: 'bottom', ...base.legend },
+        });
+        charts['chart-pie-erros'].render();
+      }
+
+      // AREA: TODOS os dados históricos com filtro de série
+      const areaEl = document.getElementById('chart-area');
+      const exAll = [...execucoesData.value].reverse();
+      if (areaEl && exAll.length) {
+        const series = [];
+        if (anlSeries.value.proc) series.push({ name: 'Processados', data: exAll.map(e => +e.total_processado || 0) });
+        if (anlSeries.value.suc)  series.push({ name: 'Sucesso',     data: exAll.map(e => +e.total_sucesso || 0) });
+        if (anlSeries.value.err)  series.push({ name: 'Erros',       data: exAll.map(e => +e.total_erro || 0) });
+        if (series.length) {
+          charts['chart-area'] = new ApexCharts(areaEl, {
+            ...base,
+            chart: { ...base.chart, type: 'area', height: 320 },
+            series,
+            xaxis: { ...base.xaxis, categories: exAll.map((e, i) => `Exec.${i + 1}`) },
+            fill: { type: 'gradient', gradient: { opacityFrom: .3, opacityTo: .0 } },
+            stroke: { curve: 'smooth', width: 2 },
+            colors: ['#0065ff', '#00b86b', '#e63946'],
+            dataLabels: { enabled: false },
+          });
+          charts['chart-area'].render();
+        }
+      }
+    }
+
+    // DRAG & DROP
+    function onDragStart(e, kpi) {
+      dragging.value = kpi;
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', kpi.id);
+    }
+    function onDrop(e) {
+      dropOver.value = false;
+      if (!dragging.value) return;
+      activeChart.value = dragging.value;
+      dragging.value = null;
+      nextTick(() => renderDash());
+    }
+
+    // NAV
+    function nav(page) {
+      if (page === pg.value) return;
+      const upd = () => { pg.value = page; };
+      if (document.startViewTransition) {
+        document.startViewTransition({ update: upd, types: ['forward'] });
+      } else { upd(); }
+      nextTick(() => {
+        lucide.createIcons();
+        if (page === 'dashboard') setTimeout(renderDash, 100);
+        if (page === 'analytics') setTimeout(renderAnl, 100);
+      });
+    }
+
+    // THEME
+    function thm() {
+      dk.value = !dk.value;
+      const t = dk.value ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      document.querySelector('meta[name="color-scheme"]').content = t;
+      localStorage.setItem('sos-theme', t);
+      setTimeout(() => { renderDash(); if (pg.value === 'analytics') renderAnl(); }, 50);
+    }
+
+    // LOAD DATA
+    async function loadAll() {
+      loading.value = true;
+      try {
+        const resp = await fetch('/api/data');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        execucoesData.value = data.execs || [];
+        errosData.value     = data.errs  || [];
+        itensData.value     = data.itens || [];
+        logsData.value      = data.logs  || [];
+        configData.value    = data.cfg   || [];
+        smokeData.value     = data.smoke || [];
+        dashData.value      = data.kpis  || {};
+        const cfgModo = configData.value.find(c => c.chave === 'MODO_EXECUCAO');
+        if (cfgModo) modo.value = cfgModo.valor;
+        lastUpd.value = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        await nextTick();
+        lucide.createIcons();
+        renderDash();
+        if (pg.value === 'analytics') renderAnl();
+      } catch (e) {
+        console.error('loadAll error:', e);
+      } finally {
+        loading.value = false;
+      }
+    }
+
+    // OPEN DOC MODAL
+    async function openDoc(item) {
+      docModal.value = null;
+      // Apenas para DCs (documentos)
+      if (item.tipo_entidade !== 'DOCUMENTO') {
+        docModal.value = { dados_planilha: item, dados_appsheet: { status_sync: 'FALHA', nota: 'Detalhes AppSheet disponíveis apenas para Documentos (DC).' } };
+        nextTick(() => lucide.createIcons());
+        return;
+      }
+      try {
+        const r = await fetch(`/api/documento/${encodeURIComponent(item.etiqueta)}`);
+        docModal.value = r.ok ? await r.json() : { dados_planilha: item, dados_appsheet: { status_sync: 'FALHA', nota: 'Erro na busca AppSheet.' } };
+      } catch { docModal.value = { dados_planilha: item, dados_appsheet: { status_sync: 'FALHA', nota: 'Erro de conexão.' } }; }
+      nextTick(() => lucide.createIcons());
+    }
+
+    // HELPERS
+    function formatJSON(str) {
+      try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
+    }
+
+    // AI
+    async function sendAI(text) {
+      const q = text || aiIn.value.trim();
+      if (!q) return;
+      aiIn.value = '';
+      aiMsgs.value.push({ role: 'user', text: q });
+      aiTyp.value = true;
+      await nextTick(); if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight;
+      try {
+        const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pergunta: q }) });
+        const res = await r.json();
+        aiMsgs.value.push({ role: 'ai', text: res.resposta });
+      } catch {
+        // fallback local
+        aiMsgs.value.push({ role: 'ai', text: aiLocalResp(q) });
+      }
+      aiTyp.value = false;
+      await nextTick(); if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight;
+    }
+
+    function aiLocalResp(q) {
+      const ql = q.toLowerCase();
+      const erAb = errosData.value.filter(e => e.status_erro === 'ABERTO');
+      const tot = execucoesData.value.length;
+      const suc = execucoesData.value.filter(e => e.status && e.status.includes('SUCESSO') && !e.status.includes('ERRO')).length;
+      const taxa = tot ? ((suc / tot) * 100).toFixed(1) : '—';
+      if (ql.includes('taxa') || ql.includes('sucesso geral')) return `Taxa geral de sucesso: <strong>${taxa}%</strong> (${suc}/${tot} execuções).`;
+      if (ql.includes('erro') || ql.includes('aberto')) return `Há <strong>${erAb.length} erros abertos</strong>.<br/>` + erAb.slice(0, 4).map(e => `• <code>${e.etiqueta}</code> — ${e.codigo_erro}`).join('<br/>');
+      if (ql.includes('última execução') || ql.includes('ultima execucao')) {
+        const last = execucoesData.value[0];
+        if (!last) return 'Nenhuma execução registrada.';
+        return `Última execução: <strong>${last.execucao_id}</strong><br/>Função: <code>${last.funcao}</code><br/>Status: <strong>${last.status}</strong><br/>Processados: <strong>${last.total_processado}</strong> itens em ${fmtDur(last.duracao_ms)}.`;
+      }
+      return `Entendido! <br/><br/>Resumo atual:<br/>📦 ${itensData.value.filter(i=>i.tipo_entidade==='CAIXA').length} caixas · 📄 ${itensData.value.filter(i=>i.tipo_entidade==='DOCUMENTO').length} documentos<br/>✅ Erros abertos: <strong>${erAb.length}</strong> · 🔄 Execuções: <strong>${tot}</strong>`;
+    }
+
+    onMounted(async () => {
+      const saved = localStorage.getItem('sos-theme') || 'dark';
+      dk.value = saved === 'dark';
+      await loadAll();
+      await nextTick();
+      lucide.createIcons();
+    });
+    watch(pg, () => nextTick(() => lucide.createIcons()));
+    watch(dk, () => nextTick(() => lucide.createIcons()));
+
+    return {
+      sbCol, loading, pg, dk, aiOp, aiIn, aiTyp, gs, chatBox, lastUpd, modo, docModal,
+      dragging, dropOver, activeChart, anlSeries,
+      execucoesData, errosData, itensData, logsData, configData, smokeData, dashData,
+      navItems, pgLabel, kpiCards, erroCount,
+      execFuncs, errosCodigos,
+      exF, exP, exTP, filtExecs, pagExecs,
+      itF, itP, itTP, filtItens, pagItens, itensStats,
+      erF, erP, erTP, filtErros, pagErros,
+      lgF, lgP, lgTP, filtLogs, pagLogs,
+      smF, filtSmoke,
+      aiMsgs, aiSugs,
+      nav, thm, loadAll, sendAI, openDoc, formatJSON, renderAnl, renderDash,
+      onDragStart, onDrop, pnums, fmtDate, fmtDur, fmtDateOnly, sc, ed,
+    };
+  }
+};
+
+createApp(App).mount('#app');
+</script>
+</body>
+</html>
